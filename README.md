@@ -206,18 +206,3 @@ For issues, questions, or suggestions:
 
 *Version 2.0.0 - Real WebRTC Implementation*
 
-
-
-## 📁 Project Structure
-
-```
-skibidi.com/
-├── index.html          # Main HTML interface
-├── styles.css          # Stylesheet with responsive design
-├── app.js             # WebRTC client logic
-├── api/
-│   └── socketio.js    # Serverless Socket.IO handler for Vercel
-├── package.json       # Dependencies and scripts
-├── vercel.json        # Vercel configuration
-└── README.md          # This file
-```

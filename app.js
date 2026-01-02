@@ -278,27 +278,42 @@ async function handleIceCandidate(candidate) {
  * Optimize SDP for low latency
  */
 function optimizeSDPForLatency(sdp) {
-    // Set maximum bitrate
-    sdp = sdp.replace(/a=fmtp:(\d+) /g, 'a=fmtp:$1 x-google-max-bitrate=10000;x-google-min-bitrate=2000;x-google-start-bitrate=5000;');
-    
-    // Enable hardware acceleration hints
-    sdp = sdp.replace(/a=rtpmap:(\d+) H264/g, 'a=rtpmap:$1 H264\r\na=fmtp:$1 profile-level-id=42e01f;level-asymmetry-allowed=1;packetization-mode=1');
-    
-    return sdp;
+    try {
+        // Set maximum bitrate for better quality
+        let modifiedSdp = sdp.replace(/a=fmtp:(\d+) /g, 'a=fmtp:$1 x-google-max-bitrate=10000;x-google-min-bitrate=2000;x-google-start-bitrate=5000;');
+        
+        // Enable hardware acceleration hints for H264
+        modifiedSdp = modifiedSdp.replace(/a=rtpmap:(\d+) H264/g, 'a=rtpmap:$1 H264\r\na=fmtp:$1 profile-level-id=42e01f;level-asymmetry-allowed=1;packetization-mode=1');
+        
+        return modifiedSdp;
+    } catch (error) {
+        console.warn('Error optimizing SDP:', error);
+        return sdp; // Return original if optimization fails
+    }
 }
 
 /**
  * Display remote stream in video element
  */
 function displayRemoteStream() {
-    screenDisplay.innerHTML = `
-        <video id="remoteVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: contain; background: #000;"></video>
-        <div id="streamStats" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #0f0; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;"></div>
-    `;
+    // Clear existing content
+    screenDisplay.textContent = '';
     
-    const videoElement = document.getElementById('remoteVideo');
+    // Create video element
+    const videoElement = document.createElement('video');
+    videoElement.id = 'remoteVideo';
+    videoElement.autoplay = true;
+    videoElement.playsInline = true;
+    videoElement.style.cssText = 'width: 100%; height: 100%; object-fit: contain; background: #000;';
     videoElement.srcObject = remoteStream;
     
+    // Create stats display
+    const statsDiv = document.createElement('div');
+    statsDiv.id = 'streamStats';
+    statsDiv.style.cssText = 'position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #0f0; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;';
+    
+    screenDisplay.appendChild(videoElement);
+    screenDisplay.appendChild(statsDiv);
     screenControls.style.display = 'flex';
 }
 
@@ -413,16 +428,25 @@ async function startScreenSharing(code) {
         currentCode = code;
         role = 'host';
         
-        // Display local preview
-        screenDisplay.innerHTML = `
-            <video id="localVideo" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: contain; background: #000;"></video>
-            <div style="position: absolute; top: 10px; left: 10px; background: rgba(80, 200, 120, 0.9); color: white; padding: 8px 15px; border-radius: 5px; font-weight: 600;">
-                🔴 Sharing - Code: ${code}
-            </div>
-        `;
+        // Clear and create elements safely
+        screenDisplay.textContent = '';
         
-        const videoElement = document.getElementById('localVideo');
+        // Create video element
+        const videoElement = document.createElement('video');
+        videoElement.id = 'localVideo';
+        videoElement.autoplay = true;
+        videoElement.muted = true;
+        videoElement.playsInline = true;
+        videoElement.style.cssText = 'width: 100%; height: 100%; object-fit: contain; background: #000;';
         videoElement.srcObject = localStream;
+        
+        // Create status badge
+        const statusBadge = document.createElement('div');
+        statusBadge.style.cssText = 'position: absolute; top: 10px; left: 10px; background: rgba(80, 200, 120, 0.9); color: white; padding: 8px 15px; border-radius: 5px; font-weight: 600;';
+        statusBadge.textContent = `🔴 Sharing - Code: ${code}`;
+        
+        screenDisplay.appendChild(videoElement);
+        screenDisplay.appendChild(statusBadge);
         
         screenControls.style.display = 'flex';
         updateConnectionStatus('connected', `Sharing as ${code} - Waiting for viewer...`);
@@ -503,14 +527,26 @@ function disconnectFromRemote() {
     // Update UI
     updateConnectionStatus('disconnected', 'Not Connected');
     
-    // Reset screen display
-    screenDisplay.innerHTML = `
-        <div class="placeholder-content">
-            <div class="placeholder-icon">🖥️</div>
-            <h3>No Active Connection</h3>
-            <p>Enter a sharing code above to connect to a remote desktop</p>
-        </div>
-    `;
+    // Reset screen display safely
+    screenDisplay.textContent = '';
+    
+    const placeholderDiv = document.createElement('div');
+    placeholderDiv.className = 'placeholder-content';
+    
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'placeholder-icon';
+    iconDiv.textContent = '🖥️';
+    
+    const heading = document.createElement('h3');
+    heading.textContent = 'No Active Connection';
+    
+    const paragraph = document.createElement('p');
+    paragraph.textContent = 'Enter a sharing code above to connect to a remote desktop';
+    
+    placeholderDiv.appendChild(iconDiv);
+    placeholderDiv.appendChild(heading);
+    placeholderDiv.appendChild(paragraph);
+    screenDisplay.appendChild(placeholderDiv);
     
     // Hide controls
     screenControls.style.display = 'none';
