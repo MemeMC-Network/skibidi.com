@@ -452,8 +452,17 @@ function setupDataChannel(channel) {
     if (role === 'host') {
         channel.onmessage = (event) => {
             try {
-                const controlEvent = JSON.parse(event.data);
-                handleRemoteControlEvent(controlEvent);
+                const data = JSON.parse(event.data);
+                
+                // Handle batched events
+                if (data.type === 'batch' && data.events) {
+                    data.events.forEach(controlEvent => {
+                        handleRemoteControlEvent(controlEvent);
+                    });
+                } else {
+                    // Handle single event
+                    handleRemoteControlEvent(data);
+                }
             } catch (error) {
                 console.error('Error parsing control event:', error);
             }
@@ -467,9 +476,10 @@ function setupDataChannel(channel) {
 function handleRemoteControlEvent(event) {
     // Note: Due to browser security, we cannot actually control the host's desktop
     // This is a framework for when browser APIs support it or for custom implementations
-    console.log('🎮 Remote control event:', event.type, event);
     
-    // Log events for demonstration
+    // Log events for demonstration (comment out for production to reduce noise)
+    // console.log('🎮 Remote control event:', event.type);
+    
     // In a real implementation with proper APIs, this would control the desktop
     switch (event.type) {
         case 'mousemove':
@@ -632,11 +642,12 @@ function handleMouseDown(e) {
     if (!remoteControlEnabled) return;
     e.preventDefault();
     
+    const rect = e.target.getBoundingClientRect();
     sendControlEventImmediate({
         type: 'mousedown',
         button: e.button,
-        x: (e.clientX - e.target.getBoundingClientRect().left) / e.target.getBoundingClientRect().width,
-        y: (e.clientY - e.target.getBoundingClientRect().top) / e.target.getBoundingClientRect().height
+        x: (e.clientX - rect.left) / rect.width,
+        y: (e.clientY - rect.top) / rect.height
     });
 }
 
@@ -644,11 +655,12 @@ function handleMouseUp(e) {
     if (!remoteControlEnabled) return;
     e.preventDefault();
     
+    const rect = e.target.getBoundingClientRect();
     sendControlEventImmediate({
         type: 'mouseup',
         button: e.button,
-        x: (e.clientX - e.target.getBoundingClientRect().left) / e.target.getBoundingClientRect().width,
-        y: (e.clientY - e.target.getBoundingClientRect().top) / e.target.getBoundingClientRect().height
+        x: (e.clientX - rect.left) / rect.width,
+        y: (e.clientY - rect.top) / rect.height
     });
 }
 
