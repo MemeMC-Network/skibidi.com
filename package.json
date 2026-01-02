@@ -4,9 +4,9 @@
   "description": "Real-time screen sharing application with WebRTC",
   "main": "api/index.js",
   "scripts": {
-    "dev": "vercel dev",
+    "dev": "node dev-server.js",
     "build": "echo 'No build step required'",
-    "start": "vercel dev"
+    "start": "node dev-server.js"
   },
   "keywords": [
     "screen-sharing",
