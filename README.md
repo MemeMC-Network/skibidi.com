@@ -1,37 +1,35 @@
 # 🖥️ Skibidi Screen Share
 
-A foundational web-based screen-sharing interface inspired by AnyDesk, built for remote desktop and screen sharing capabilities.
+A real-time web-based screen-sharing application using WebRTC, optimized for low-latency streaming suitable for gaming and high-performance applications.
 
 ## 📋 Features
 
-- **Sharing Code System**: Enter or generate 9-digit codes for secure connections
+- **Real WebRTC Screen Sharing**: Actual peer-to-peer screen streaming (not a demo!)
+- **Low Latency**: Optimized for gaming with up to 60 FPS support
+- **Sharing Code System**: Easy 9-digit codes for secure connections
 - **Modern UI**: Clean, responsive interface with smooth animations
-- **Real-time Status**: Visual indicators for connection status
-- **Screen Sharing Area**: Placeholder for actual screen stream display
-- **Control Panel**: Fullscreen, disconnect, and settings controls
-- **Backend Ready**: Commented backend template with WebSocket support
+- **Real-time Statistics**: FPS, bitrate, and packet loss monitoring
+- **Vercel Deployable**: Serverless architecture ready for instant deployment
+- **Auto-Scaling**: Socket.IO based signaling works seamlessly on Vercel
 
 ## 🚀 Quick Start
 
-### Option 1: Static Demo (No Backend Required)
+### Deploy to Vercel (Recommended)
 
-Simply open `index.html` in a web browser to see the interface in demo mode:
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/MemeMC-Network/skibidi.com)
 
-```bash
-# Using Python's built-in server
-python3 -m http.server 8000
+1. Click the button above or visit [Vercel](https://vercel.com)
+2. Import your repository
+3. Vercel will automatically detect the configuration
+4. Deploy! 🎉
 
-# Or using Node.js http-server
-npx http-server -p 8000
-```
+Your app will be live with a URL like `https://your-app.vercel.app`
 
-Then visit: `http://localhost:8000`
-
-### Option 2: Full Setup (With Backend)
+### Local Development
 
 #### Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v18 or higher)
 - npm (comes with Node.js)
 
 #### Installation
@@ -44,21 +42,32 @@ Then visit: `http://localhost:8000`
 
 2. **Install dependencies**
    ```bash
-   npm init -y
-   npm install express cors body-parser ws
+   npm install
    ```
 
-3. **Configure the backend**
-   - Open `server.js`
-   - Uncomment all the code sections (they're currently commented out as placeholders)
-
-4. **Start the server**
+3. **Run the development server**
    ```bash
-   node server.js
+   npm run dev
    ```
 
-5. **Access the application**
+4. **Access the application**
    - Open your browser to: `http://localhost:3000`
+
+## 🎯 How It Works
+
+### For Screen Sharing (Host)
+
+1. Click "Generate My Code" button
+2. Allow screen capture when prompted by your browser
+3. Share the generated code with someone
+4. They enter your code and instantly see your screen!
+
+### For Viewing (Viewer)
+
+1. Get a sharing code from someone
+2. Enter the code in the input field
+3. Click "Connect"
+4. Watch their screen in real-time!
 
 ## 📁 Project Structure
 
@@ -66,137 +75,72 @@ Then visit: `http://localhost:8000`
 skibidi.com/
 ├── index.html          # Main HTML interface
 ├── styles.css          # Stylesheet with responsive design
-├── app.js             # Frontend JavaScript logic
-├── server.js          # Backend API (Node.js/Express)
+├── app.js             # WebRTC client logic
+├── api/
+│   └── socketio.js    # Serverless Socket.IO handler for Vercel
+├── package.json       # Dependencies and scripts
+├── vercel.json        # Vercel configuration
 └── README.md          # This file
 ```
 
-## 🎯 How It Works
+## 🔧 Technical Details
 
-### Frontend (Client-Side)
+### WebRTC Configuration
 
-1. **Sharing Code Input**: Users enter or generate a 9-digit sharing code
-2. **Code Validation**: Format validation ensures codes match XXX-XXX-XXX pattern
-3. **Connection Simulation**: Demo mode simulates connecting to remote screens
-4. **Visual Feedback**: Status indicators show connection state
+The application uses optimized WebRTC settings for low latency:
 
-### Backend (Server-Side)
+- **Frame Rate**: Up to 60 FPS
+- **Resolution**: Up to 2560x1440
+- **Bitrate**: Adaptive (2-10 Mbps)
+- **Codec**: H.264 with hardware acceleration
+- **Transport**: DTLS-SRTP for secure streaming
 
-The backend provides:
+### Architecture
 
-- **REST API Endpoints**:
-  - `POST /api/generate-code` - Generate new sharing codes
-  - `POST /api/connect` - Connect to a remote screen
-  - `POST /api/disconnect` - End active session
-  - `GET /api/sessions` - List active sessions (admin)
+- **Frontend**: Vanilla JavaScript with WebRTC APIs
+- **Signaling**: Socket.IO for peer discovery and ICE exchange
+- **Backend**: Vercel Serverless Functions
+- **Connection**: Peer-to-peer (P2P) after initial signaling
 
-- **WebSocket Server**:
-  - Real-time bidirectional communication
-  - Screen data streaming from host to viewer
-  - Control commands from viewer to host
+## 🎮 Performance Features
 
-## 🔧 API Documentation
-
-### Generate Sharing Code
-
-```javascript
-POST /api/generate-code
-
-Response:
-{
-  "success": true,
-  "code": "123-456-789",
-  "message": "Sharing code generated successfully"
-}
-```
-
-### Connect to Remote Screen
-
-```javascript
-POST /api/connect
-
-Request:
-{
-  "code": "123-456-789"
-}
-
-Response:
-{
-  "success": true,
-  "message": "Connection request accepted",
-  "sessionId": "123-456-789"
-}
-```
-
-### Disconnect Session
-
-```javascript
-POST /api/disconnect
-
-Request:
-{
-  "sessionId": "123-456-789"
-}
-
-Response:
-{
-  "success": true,
-  "message": "Disconnected successfully"
-}
-```
-
-## 🎨 Customization
-
-### Modify Colors
-
-Edit the CSS variables in `styles.css`:
-
-```css
-:root {
-    --primary-color: #4a90e2;      /* Main theme color */
-    --secondary-color: #50c878;    /* Success/connect color */
-    --bg-color: #f5f7fa;          /* Background color */
-    /* ... more variables ... */
-}
-```
-
-### Adjust Connection Timeout
-
-In `app.js`, modify the connection simulation delay:
-
-```javascript
-// Change from 2000ms (2 seconds) to your preferred delay
-setTimeout(() => {
-    // Connection logic...
-}, 2000);
-```
+- ✅ **60 FPS Support**: Smooth streaming for gaming
+- ✅ **Hardware Acceleration**: Uses GPU encoding when available
+- ✅ **Adaptive Bitrate**: Automatically adjusts to network conditions
+- ✅ **Low Latency SDP**: Optimized Session Description Protocol
+- ✅ **Real-time Stats**: Monitor connection quality
+- ✅ **No Compression**: Disabled to reduce latency
 
 ## 🔒 Security Considerations
 
-**Important**: This is a foundational implementation. For production use, implement:
+**Current Implementation**:
+- Peer-to-peer encryption via DTLS-SRTP
+- Temporary sharing codes (expire after 1 hour)
+- STUN servers for NAT traversal
 
-- ✅ Authentication and authorization
-- ✅ Encrypted connections (WSS/HTTPS)
-- ✅ Rate limiting on API endpoints
-- ✅ Session expiration and cleanup
-- ✅ Input sanitization
-- ✅ CORS configuration
-- ✅ Database for persistent storage
-- ✅ Logging and monitoring
+**For Production**:
+- ✅ Add authentication and user accounts
+- ✅ Implement TURN servers for firewall bypass
+- ✅ Add session recording with consent
+- ✅ Implement rate limiting
+- ✅ Add end-to-end encryption for signaling
+- ✅ GDPR compliance for EU users
 
 ## 🛠️ Technology Stack
 
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript
-- **Backend**: Node.js, Express.js
-- **Real-time**: WebSocket (ws library)
-- **Styling**: Custom CSS with animations
+- **WebRTC**: Native browser APIs (getUserMedia, RTCPeerConnection)
+- **Signaling**: Socket.IO (WebSocket + polling fallback)
+- **Backend**: Vercel Serverless Functions (Node.js)
+- **Deployment**: Vercel Edge Network
 
 ## 📱 Browser Support
 
-- ✅ Chrome/Edge (v90+)
+- ✅ Chrome/Edge (v90+) - **Recommended**
 - ✅ Firefox (v88+)
-- ✅ Safari (v14+)
+- ✅ Safari (v14+) - macOS only
 - ✅ Opera (v76+)
+- ❌ Mobile browsers (limited screen capture support)
 
 ## 🤝 Contributing
 
@@ -208,13 +152,32 @@ Contributions are welcome! Please follow these steps:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+## 🐛 Troubleshooting
+
+### "Failed to start screen sharing"
+- Ensure you're using HTTPS (required for screen capture API)
+- Allow screen capture permission in your browser
+- Try using Chrome/Edge for best compatibility
+
+### "Connection failed"
+- Check if both users are online
+- Ensure the sharing code is correct
+- Try refreshing the page and generating a new code
+
+### High Latency / Lag
+- Close other bandwidth-intensive applications
+- Use a wired internet connection instead of WiFi
+- Check the real-time stats display for network issues
+
 ## 📝 License
 
 This project is open source and available under the MIT License.
 
 ## 🙏 Acknowledgments
 
-- Inspired by AnyDesk's user interface
+- WebRTC standards by W3C
+- Socket.IO for real-time communication
+- Vercel for serverless hosting
 - Built for the MemeMC Network community
 
 ## 📞 Support
@@ -225,17 +188,36 @@ For issues, questions, or suggestions:
 
 ## 🗺️ Roadmap
 
-- [ ] Implement actual screen capture API
-- [ ] Add peer-to-peer WebRTC connections
-- [ ] User authentication system
-- [ ] File transfer capabilities
-- [ ] Chat functionality
+- [x] Real WebRTC screen sharing
+- [x] Low-latency optimization for gaming
+- [x] Vercel deployment support
+- [x] Real-time statistics display
+- [ ] Audio sharing toggle
+- [ ] Quality settings (resolution, framerate)
+- [ ] Multiple viewers support
 - [ ] Session recording
-- [ ] Mobile responsive improvements
-- [ ] Multi-platform desktop apps (Electron)
+- [ ] Remote control capabilities
+- [ ] Mobile app (React Native)
+- [ ] Desktop app (Electron)
 
 ---
 
 **Made with ❤️ by MemeMC Network**
 
-*Version 1.0.0 - Initial Release*
+*Version 2.0.0 - Real WebRTC Implementation*
+
+
+
+## 📁 Project Structure
+
+```
+skibidi.com/
+├── index.html          # Main HTML interface
+├── styles.css          # Stylesheet with responsive design
+├── app.js             # WebRTC client logic
+├── api/
+│   └── socketio.js    # Serverless Socket.IO handler for Vercel
+├── package.json       # Dependencies and scripts
+├── vercel.json        # Vercel configuration
+└── README.md          # This file
+```
