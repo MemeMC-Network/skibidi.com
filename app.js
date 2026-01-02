@@ -33,6 +33,14 @@ let role = null; // 'host' or 'viewer'
 let remotePeerId = null;
 let statsInterval = null;
 
+// Remote Control State
+let dataChannel = null;
+let remoteControlEnabled = false;
+let lastMousePosition = { x: 0, y: 0 };
+let eventBatchQueue = [];
+let eventBatchInterval = null;
+let inputLatencyHistory = [];
+
 // ============================================
 // WebRTC Configuration (Optimized for Low Latency)
 // ============================================
@@ -59,6 +67,18 @@ const screenConstraints = {
         noiseSuppression: true,
         autoGainControl: true
     }
+};
+
+// Remote Control Configuration (Gaming-Optimized)
+const remoteControlConfig = {
+    // Send batched events every 16ms (60Hz) for gaming responsiveness
+    batchInterval: 16,
+    // Mouse movement throttle (send every N milliseconds)
+    mouseMoveThrottle: 8, // 125Hz mouse polling
+    // Maximum events per batch
+    maxBatchSize: 50,
+    // Enable prediction for smoother cursor movement
+    enablePrediction: true
 };
 
 // ============================================
@@ -133,6 +153,23 @@ function initializeSocket() {
  */
 function createPeerConnection() {
     peerConnection = new RTCPeerConnection(rtcConfig);
+
+    // Create data channel for remote control (viewer creates it)
+    if (role === 'viewer') {
+        dataChannel = peerConnection.createDataChannel('remoteControl', {
+            ordered: false, // Allow out-of-order for lower latency
+            maxRetransmits: 0 // Don't retransmit for real-time control
+        });
+        setupDataChannel(dataChannel);
+        console.log('📡 Data channel created by viewer');
+    }
+
+    // Handle data channel from viewer (host receives it)
+    peerConnection.ondatachannel = (event) => {
+        dataChannel = event.channel;
+        setupDataChannel(dataChannel);
+        console.log('📡 Data channel received by host');
+    };
 
     // Add tracks from local stream (for host)
     if (localStream && role === 'host') {
@@ -312,6 +349,30 @@ function displayRemoteStream() {
     statsDiv.id = 'streamStats';
     statsDiv.style.cssText = 'position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #0f0; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;';
     
+    // Create remote control toggle button (viewer only)
+    if (role === 'viewer') {
+        const controlToggle = document.createElement('button');
+        controlToggle.id = 'remoteControlToggle';
+        controlToggle.className = 'control-toggle-btn';
+        controlToggle.innerHTML = '🎮 Enable Remote Control';
+        controlToggle.style.cssText = 'position: absolute; top: 10px; left: 10px; background: rgba(74, 144, 226, 0.9); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s;';
+        
+        controlToggle.addEventListener('click', () => {
+            const newState = !remoteControlEnabled;
+            toggleRemoteControl(newState);
+            
+            if (newState) {
+                controlToggle.innerHTML = '🎮 Disable Remote Control';
+                controlToggle.style.background = 'rgba(231, 76, 60, 0.9)';
+            } else {
+                controlToggle.innerHTML = '🎮 Enable Remote Control';
+                controlToggle.style.background = 'rgba(74, 144, 226, 0.9)';
+            }
+        });
+        
+        screenDisplay.appendChild(controlToggle);
+    }
+    
     screenDisplay.appendChild(videoElement);
     screenDisplay.appendChild(statsDiv);
     screenControls.style.display = 'flex';
@@ -359,6 +420,291 @@ async function startStatsMonitoring() {
             console.error('Error getting stats:', error);
         }
     }, 1000);
+}
+
+// ============================================
+// Remote Control Functions (Gaming-Optimized)
+// ============================================
+
+/**
+ * Setup data channel for remote control
+ */
+function setupDataChannel(channel) {
+    channel.onopen = () => {
+        console.log('✅ Data channel opened - Remote control ready');
+        if (role === 'viewer') {
+            showStatusMessage('Remote control ready! Click to enable.', 'success');
+        }
+    };
+
+    channel.onclose = () => {
+        console.log('❌ Data channel closed');
+        if (remoteControlEnabled) {
+            toggleRemoteControl(false);
+        }
+    };
+
+    channel.onerror = (error) => {
+        console.error('Data channel error:', error);
+    };
+
+    // Handle incoming control events (host side)
+    if (role === 'host') {
+        channel.onmessage = (event) => {
+            try {
+                const controlEvent = JSON.parse(event.data);
+                handleRemoteControlEvent(controlEvent);
+            } catch (error) {
+                console.error('Error parsing control event:', error);
+            }
+        };
+    }
+}
+
+/**
+ * Handle remote control events (host side)
+ */
+function handleRemoteControlEvent(event) {
+    // Note: Due to browser security, we cannot actually control the host's desktop
+    // This is a framework for when browser APIs support it or for custom implementations
+    console.log('🎮 Remote control event:', event.type, event);
+    
+    // Log events for demonstration
+    // In a real implementation with proper APIs, this would control the desktop
+    switch (event.type) {
+        case 'mousemove':
+            // Would move cursor to (event.x, event.y)
+            break;
+        case 'mousedown':
+        case 'mouseup':
+            // Would trigger mouse button (event.button)
+            break;
+        case 'wheel':
+            // Would scroll (event.deltaX, event.deltaY)
+            break;
+        case 'keydown':
+        case 'keyup':
+            // Would trigger key (event.key, event.code)
+            break;
+    }
+}
+
+/**
+ * Toggle remote control on/off (viewer side)
+ */
+function toggleRemoteControl(enabled) {
+    remoteControlEnabled = enabled;
+    
+    const videoElement = document.getElementById('remoteVideo');
+    if (!videoElement) return;
+    
+    if (enabled) {
+        // Start capturing input events
+        startEventBatching();
+        attachInputEventListeners(videoElement);
+        videoElement.style.cursor = 'none'; // Hide cursor for custom rendering
+        showStatusMessage('🎮 Remote control enabled', 'success');
+        console.log('🎮 Remote control enabled');
+    } else {
+        // Stop capturing input events
+        stopEventBatching();
+        detachInputEventListeners(videoElement);
+        videoElement.style.cursor = 'default';
+        showStatusMessage('Remote control disabled', 'info');
+        console.log('Remote control disabled');
+    }
+}
+
+/**
+ * Start event batching for optimized sending
+ */
+function startEventBatching() {
+    if (eventBatchInterval) return;
+    
+    eventBatchInterval = setInterval(() => {
+        if (eventBatchQueue.length > 0 && dataChannel && dataChannel.readyState === 'open') {
+            // Send batched events
+            const batch = eventBatchQueue.splice(0, remoteControlConfig.maxBatchSize);
+            dataChannel.send(JSON.stringify({
+                type: 'batch',
+                events: batch,
+                timestamp: Date.now()
+            }));
+        }
+    }, remoteControlConfig.batchInterval);
+}
+
+/**
+ * Stop event batching
+ */
+function stopEventBatching() {
+    if (eventBatchInterval) {
+        clearInterval(eventBatchInterval);
+        eventBatchInterval = null;
+        eventBatchQueue = [];
+    }
+}
+
+/**
+ * Queue control event for batched sending
+ */
+function queueControlEvent(event) {
+    eventBatchQueue.push({
+        ...event,
+        timestamp: Date.now()
+    });
+}
+
+/**
+ * Send immediate control event (for critical events)
+ */
+function sendControlEventImmediate(event) {
+    if (dataChannel && dataChannel.readyState === 'open') {
+        dataChannel.send(JSON.stringify({
+            ...event,
+            timestamp: Date.now()
+        }));
+    }
+}
+
+/**
+ * Attach input event listeners to video element
+ */
+function attachInputEventListeners(element) {
+    // Mouse events
+    element.addEventListener('mousemove', handleMouseMove);
+    element.addEventListener('mousedown', handleMouseDown);
+    element.addEventListener('mouseup', handleMouseUp);
+    element.addEventListener('wheel', handleMouseWheel, { passive: false });
+    element.addEventListener('contextmenu', handleContextMenu);
+    
+    // Keyboard events (capture on document)
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+    
+    // Focus management
+    element.tabIndex = 0;
+    element.focus();
+    
+    console.log('✅ Input event listeners attached');
+}
+
+/**
+ * Detach input event listeners
+ */
+function detachInputEventListeners(element) {
+    element.removeEventListener('mousemove', handleMouseMove);
+    element.removeEventListener('mousedown', handleMouseDown);
+    element.removeEventListener('mouseup', handleMouseUp);
+    element.removeEventListener('wheel', handleMouseWheel);
+    element.removeEventListener('contextmenu', handleContextMenu);
+    
+    document.removeEventListener('keydown', handleKeyDown);
+    document.removeEventListener('keyup', handleKeyUp);
+    
+    console.log('❌ Input event listeners detached');
+}
+
+// Mouse event handlers
+let lastMouseMoveTime = 0;
+
+function handleMouseMove(e) {
+    if (!remoteControlEnabled) return;
+    
+    const now = Date.now();
+    if (now - lastMouseMoveTime < remoteControlConfig.mouseMoveThrottle) {
+        return; // Throttle mouse movements
+    }
+    lastMouseMoveTime = now;
+    
+    const rect = e.target.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    
+    queueControlEvent({
+        type: 'mousemove',
+        x: x,
+        y: y
+    });
+}
+
+function handleMouseDown(e) {
+    if (!remoteControlEnabled) return;
+    e.preventDefault();
+    
+    sendControlEventImmediate({
+        type: 'mousedown',
+        button: e.button,
+        x: (e.clientX - e.target.getBoundingClientRect().left) / e.target.getBoundingClientRect().width,
+        y: (e.clientY - e.target.getBoundingClientRect().top) / e.target.getBoundingClientRect().height
+    });
+}
+
+function handleMouseUp(e) {
+    if (!remoteControlEnabled) return;
+    e.preventDefault();
+    
+    sendControlEventImmediate({
+        type: 'mouseup',
+        button: e.button,
+        x: (e.clientX - e.target.getBoundingClientRect().left) / e.target.getBoundingClientRect().width,
+        y: (e.clientY - e.target.getBoundingClientRect().top) / e.target.getBoundingClientRect().height
+    });
+}
+
+function handleMouseWheel(e) {
+    if (!remoteControlEnabled) return;
+    e.preventDefault();
+    
+    queueControlEvent({
+        type: 'wheel',
+        deltaX: e.deltaX,
+        deltaY: e.deltaY,
+        deltaMode: e.deltaMode
+    });
+}
+
+function handleContextMenu(e) {
+    if (remoteControlEnabled) {
+        e.preventDefault();
+    }
+}
+
+// Keyboard event handlers
+function handleKeyDown(e) {
+    if (!remoteControlEnabled) return;
+    
+    // Don't prevent certain browser shortcuts
+    if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) return;
+    if (e.key === 'F11') return;
+    if (e.key === 'F12') return;
+    
+    e.preventDefault();
+    
+    sendControlEventImmediate({
+        type: 'keydown',
+        key: e.key,
+        code: e.code,
+        ctrlKey: e.ctrlKey,
+        shiftKey: e.shiftKey,
+        altKey: e.altKey,
+        metaKey: e.metaKey
+    });
+}
+
+function handleKeyUp(e) {
+    if (!remoteControlEnabled) return;
+    e.preventDefault();
+    
+    sendControlEventImmediate({
+        type: 'keyup',
+        key: e.key,
+        code: e.code,
+        ctrlKey: e.ctrlKey,
+        shiftKey: e.shiftKey,
+        altKey: e.altKey,
+        metaKey: e.metaKey
+    });
 }
 
 // ============================================
@@ -498,6 +844,20 @@ async function connectAsViewer(code) {
  * Disconnect from remote session and cleanup
  */
 function disconnectFromRemote() {
+    // Disable remote control if enabled
+    if (remoteControlEnabled) {
+        toggleRemoteControl(false);
+    }
+    
+    // Stop event batching
+    stopEventBatching();
+    
+    // Close data channel
+    if (dataChannel) {
+        dataChannel.close();
+        dataChannel = null;
+    }
+    
     // Stop stats monitoring
     if (statsInterval) {
         clearInterval(statsInterval);

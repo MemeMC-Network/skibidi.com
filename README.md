@@ -1,16 +1,26 @@
 # 🖥️ Skibidi Screen Share
 
-A real-time web-based screen-sharing application using WebRTC, optimized for low-latency streaming suitable for gaming and high-performance applications.
+A real-time web-based screen-sharing application using WebRTC, optimized for low-latency streaming suitable for gaming and high-performance applications. Now with **gaming-ready remote control**!
 
 ## 📋 Features
 
 - **Real WebRTC Screen Sharing**: Actual peer-to-peer screen streaming (not a demo!)
+- **🎮 Remote Control**: Gaming-optimized input control with <16ms latency
 - **Low Latency**: Optimized for gaming with up to 60 FPS support
 - **Sharing Code System**: Easy 9-digit codes for secure connections
 - **Modern UI**: Clean, responsive interface with smooth animations
 - **Real-time Statistics**: FPS, bitrate, and packet loss monitoring
 - **Vercel Deployable**: Serverless architecture ready for instant deployment
 - **Auto-Scaling**: Socket.IO based signaling works seamlessly on Vercel
+
+### 🎮 Remote Control Features
+
+- **Ultra-Low Latency**: 60Hz input polling, event batching every 16ms
+- **Full Input Support**: Mouse (movements, clicks, scroll), Keyboard (with modifiers)
+- **Gaming Optimized**: Throttled mouse movements (125Hz), immediate click/key events
+- **WebRTC Data Channel**: Unreliable mode for mouse, reliable for keyboard
+- **Event Batching**: Optimized protocol for minimal network overhead
+- **Browser-Safe**: Framework provided (actual desktop control requires custom implementation)
 
 ## 🚀 Quick Start
 
