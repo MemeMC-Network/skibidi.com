@@ -6,17 +6,11 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
-    {
-      "src": "/socket.io/(.*)",
-      "dest": "/api/socketio"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
   "rewrites": [
+    {
+      "source": "/socket.io/(.)",
+      "destination": "/api/socketio"
+ },
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
