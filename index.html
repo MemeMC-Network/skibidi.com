@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skibidi Screen Share - Remote Desktop Solution</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🖥️ Skibidi Screen Share</h1>
+            <p class="subtitle">Remote Desktop & Screen Sharing Solution</p>
+        </header>
+
+        <main>
+            <!-- Connection Section -->
+            <section class="connection-section">
+                <div class="connection-card">
+                    <h2>Connect to Remote Desktop</h2>
+                    <p class="description">Enter the sharing code to connect to a remote screen</p>
+                    
+                    <div class="input-group">
+                        <label for="sharingCode">Sharing Code</label>
+                        <input 
+                            type="text" 
+                            id="sharingCode" 
+                            placeholder="Enter 9-digit sharing code (e.g., 123-456-789)"
+                            maxlength="11"
+                            autocomplete="off">
+                    </div>
+
+                    <div class="button-group">
+                        <button id="connectBtn" class="btn btn-primary">
+                            <span class="btn-icon">🔗</span>
+                            Connect
+                        </button>
+                        <button id="generateBtn" class="btn btn-secondary">
+                            <span class="btn-icon">🔑</span>
+                            Generate My Code
+                        </button>
+                    </div>
+
+                    <div id="statusMessage" class="status-message"></div>
+                </div>
+            </section>
+
+            <!-- Screen Sharing Area Placeholder -->
+            <section class="screen-section" id="screenSection">
+                <div class="screen-container">
+                    <div class="screen-header">
+                        <h3>Screen Sharing Area</h3>
+                        <div class="connection-status" id="connectionStatus">
+                            <span class="status-indicator"></span>
+                            <span id="statusText">Not Connected</span>
+                        </div>
+                    </div>
+
+                    <div class="screen-display" id="screenDisplay">
+                        <div class="placeholder-content">
+                            <div class="placeholder-icon">🖥️</div>
+                            <h3>No Active Connection</h3>
+                            <p>Enter a sharing code above to connect to a remote desktop</p>
+                        </div>
+                    </div>
+
+                    <div class="screen-controls" id="screenControls" style="display: none;">
+                        <button class="control-btn" id="fullscreenBtn" title="Fullscreen">
+                            <span>⛶</span>
+                        </button>
+                        <button class="control-btn" id="disconnectBtn" title="Disconnect">
+                            <span>✖</span>
+                        </button>
+                        <button class="control-btn" id="settingsBtn" title="Settings">
+                            <span>⚙</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Information Section -->
+            <section class="info-section">
+                <div class="info-card">
+                    <h3>📋 How It Works</h3>
+                    <ol>
+                        <li>Click "Generate My Code" to create your unique sharing code</li>
+                        <li>Share this code with someone who wants to connect to your screen</li>
+                        <li>Or enter someone else's code to connect to their screen</li>
+                        <li>Click "Connect" to establish the screen sharing session</li>
+                        <li>🎮 <strong>NEW!</strong> As a viewer, click "Enable Remote Control" to control the remote desktop (gaming-ready)</li>
+                    </ol>
+                </div>
+                
+                <div class="info-card" style="margin-top: 20px;">
+                    <h3>🎮 Remote Control Features</h3>
+                    <ul style="list-style: none; padding-left: 0;">
+                        <li>✅ <strong>Gaming-Optimized</strong>: 60Hz input polling, <16ms latency</li>
+                        <li>✅ <strong>Full Control</strong>: Mouse, keyboard, and scroll support</li>
+                        <li>✅ <strong>Low Latency</strong>: Event batching for minimal overhead</li>
+                        <li>✅ <strong>Smooth Control</strong>: Mouse movement interpolation</li>
+                        <li>⚠️ <strong>Note</strong>: Browser security prevents actual desktop control - framework provided for custom implementations</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Skibidi Screen Share | Powered by MemeMC Network</p>
+        </footer>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
